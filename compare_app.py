@@ -22,8 +22,8 @@ except Exception as e:
     st.error(f"❌ 数据读取失败：{e}")
     st.stop()
 
-tab1, tab2, tab3, tab4 = st.tabs(["📁 项目管理", "📦 商品管理", "🧾 商品报价", "📊 比价分析"]) 
-# 项目管理模块
+tab1, tab2, tab3, tab4 = st.tabs(["📁 项目管理", "📦 商品管理", "🧾 商品报价", "📊 比价分析"])
+# 项目管理
 with tab1:
     st.subheader("📁 项目管理")
     gb = GridOptionsBuilder.from_dataframe(projects)
@@ -46,25 +46,25 @@ with tab1:
     updated_projects = grid_response['data']
     selected_rows = grid_response['selected_rows']
 
-    if st.button("💾 保存修改"):
+    if st.button("💾 保存修改项目"):
         updated_projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
         st.success("项目保存成功")
         st.rerun()
 
     if st.button("🗑 批量删除选中项目"):
         if selected_rows is not None and len(selected_rows) > 0:
-            to_delete_ids = [r['项目ID'] for r in selected_rows]
+            to_delete_ids = [r['项目ID'] for r in selected_rows if isinstance(r, dict)]
             updated_projects = updated_projects[~updated_projects['项目ID'].isin(to_delete_ids)]
             updated_projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
             st.success("已删除选中项目")
             st.rerun()
 
-    if st.button("📄 导出项目为CSV"):
+    if st.button("📄 导出项目CSV"):
         updated_projects.to_csv("导出项目列表.csv", index=False)
         with open("导出项目列表.csv", "rb") as f:
-            st.download_button("点击下载导出的项目CSV", f, file_name="projects_export.csv")
+            st.download_button("点击下载项目CSV", f, file_name="projects_export.csv")
 
-# 商品管理模块
+# 商品管理
 with tab2:
     st.subheader("📦 商品管理")
     gb = GridOptionsBuilder.from_dataframe(products)
@@ -93,14 +93,14 @@ with tab2:
         st.rerun()
 
     if st.button("🗑 批量删除选中商品"):
-        if selected_rows:
-            to_delete_ids = [r['商品ID'] for r in selected_rows]
+        if selected_rows is not None and len(selected_rows) > 0:
+            to_delete_ids = [r['商品ID'] for r in selected_rows if isinstance(r, dict)]
             updated_products = updated_products[~updated_products['商品ID'].isin(to_delete_ids)]
             updated_products.to_csv(os.path.join(base_dir, "products.csv"), index=False)
             st.success("已删除选中商品")
             st.rerun()
 
-# 商品报价模块
+# 商品报价
 with tab3:
     st.subheader("🧾 商品报价录入")
     if projects.empty or products.empty:
@@ -126,15 +126,15 @@ with tab3:
         st.markdown("### 📈 当前项目商品报价")
         q_this = quotes[quotes["项目ID"] == proj_id].merge(products, on="商品ID", how="left")
         if not q_this.empty:
-            def highlight_price(val, limit):
-                if val > limit:
-                    return "color: red; font-weight: bold"
-                else:
+            def highlight_price(val, limit=limit_price):
+                try:
+                    return "color: red; font-weight: bold" if float(val) > float(limit) else ""
+                except:
                     return ""
-            styled = q_this.style.applymap(lambda v: highlight_price(v, limit_price) if isinstance(v, (int, float)) else "", subset=["价格"])
+            styled = q_this.style.applymap(lambda v: highlight_price(v) if isinstance(v, (int, float)) else "", subset=["价格"])
             st.dataframe(styled, use_container_width=True)
 
-# 项目比价分析模块
+# 比价分析
 with tab4:
     st.subheader("📊 项目比价分析")
     if len(projects) < 2:
@@ -165,12 +165,11 @@ with tab4:
             rows.append([name, p_old, p_new, diff, pct, status])
 
         df = pd.DataFrame(rows, columns=["品名", "项目A", "项目B", "涨跌额", "涨跌幅%", "状态"])
-
         st.dataframe(df, use_container_width=True)
 
-        # 价格走势图
+        # 绘制价格走势
         st.markdown("### 📈 商品价格走势")
-        product_choice = st.selectbox("选择一个商品查看价格趋势", products["品名"])
+        product_choice = st.selectbox("选择商品查看价格走势", products["品名"], key="chart_prod")
         prod_id_choice = products[products["品名"] == product_choice]["商品ID"].values[0]
 
         trend_data = quotes[quotes["商品ID"] == prod_id_choice].merge(projects, on="项目ID")
