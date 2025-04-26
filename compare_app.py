@@ -52,7 +52,7 @@ with tab1:
         st.rerun()
 
     if st.button("🗑 批量删除选中项目"):
-        if selected_rows:
+        if selected_rows is not None and len(selected_rows) > 0:
             to_delete_ids = [r['项目ID'] for r in selected_rows]
             updated_projects = updated_projects[~updated_projects['项目ID'].isin(to_delete_ids)]
             updated_projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
