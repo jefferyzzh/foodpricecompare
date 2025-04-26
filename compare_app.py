@@ -27,19 +27,19 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs(["📁 项目管理", "📦 商品管理"
 # 项目管理
 with tab1:
     st.subheader("📁 项目管理")
-        if st.button("➕ 新增项目"):
-            with st.form("add_project_form", clear_on_submit=True):
-                pname = st.text_input("项目名称")
-                qdate = st.date_input("询价日期", value=date.today())
-                submitted = st.form_submit_button("✅ 保存项目")
-                if submitted:
-                    new_id = projects["项目ID"].max() + 1 if not projects.empty else 1
-                    new_row = pd.DataFrame([[new_id, pname, qdate, str(date.today())]], columns=projects.columns)
-                    projects = pd.concat([projects, new_row], ignore_index=True)
-                    projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
-                    projects = pd.read_csv(os.path.join(base_dir, "projects.csv"))
-                    st.success("项目添加成功！")
-                    st.rerun()
+    if st.button("➕ 新增项目"):
+        with st.form("add_project_form", clear_on_submit=True):
+            pname = st.text_input("项目名称")
+            qdate = st.date_input("询价日期", value=date.today())
+            submitted = st.form_submit_button("✅ 保存项目")
+            if submitted:
+                new_id = projects["项目ID"].max() + 1 if not projects.empty else 1
+                new_row = pd.DataFrame([[new_id, pname, qdate, str(date.today())]], columns=projects.columns)
+                projects = pd.concat([projects, new_row], ignore_index=True)
+                projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
+                projects = pd.read_csv(os.path.join(base_dir, "projects.csv"))  # 强制刷新
+                st.success("项目添加成功！")
+                st.rerun()
 
     gb = GridOptionsBuilder.from_dataframe(projects)
     gb.configure_selection('multiple', use_checkbox=True)
@@ -90,7 +90,7 @@ with tab2:
                 new_row = pd.DataFrame([[new_id, pname, spec, unit, limit, cat]], columns=products.columns)
                 products = pd.concat([products, new_row], ignore_index=True)
                 products.to_csv(os.path.join(base_dir, "products.csv"), index=False)
-                products = pd.read_csv(os.path.join(base_dir, "products.csv"))  # ✅ 关键：重新读取
+                products = pd.read_csv(os.path.join(base_dir, "products.csv"))  # 强制刷新
                 st.success("商品添加成功！")
                 st.rerun()
 
@@ -126,6 +126,7 @@ with tab2:
             updated_products.to_csv(os.path.join(base_dir, "products.csv"), index=False)
             st.success("已删除选中商品")
             st.rerun()
+
 # 商品类别管理
 with tab3:
     st.subheader("🏷️ 商品类别管理")
@@ -138,6 +139,7 @@ with tab3:
                 new_row = pd.DataFrame([[new_id, cname]], columns=categories.columns)
                 categories = pd.concat([categories, new_row], ignore_index=True)
                 categories.to_csv(os.path.join(base_dir, "categories.csv"), index=False)
+                categories = pd.read_csv(os.path.join(base_dir, "categories.csv"))  # 强制刷新
                 st.success("类别添加成功！")
                 st.rerun()
 
@@ -173,7 +175,6 @@ with tab3:
             updated_categories.to_csv(os.path.join(base_dir, "categories.csv"), index=False)
             st.success("已删除选中类别")
             st.rerun()
-
 # 报价管理
 with tab4:
     st.subheader("🧾 报价管理")
@@ -205,12 +206,12 @@ with tab4:
         st.markdown("### 📈 当前项目商品报价")
         q_this = quotes[quotes["项目ID"] == proj_id].merge(products, on="商品ID", how="left")
         if not q_this.empty:
-            def highlight_price(val, limit):
+            def highlight_price(val, limit=limit_price):
                 try:
                     return "color: red; font-weight: bold" if float(val) > float(limit) else ""
                 except:
                     return ""
-            styled = q_this.style.applymap(lambda v: highlight_price(v, limit_price) if isinstance(v, (int, float)) else "", subset=["价格"])
+            styled = q_this.style.applymap(lambda v: highlight_price(v) if isinstance(v, (int, float)) else "", subset=["价格"])
             st.dataframe(styled, use_container_width=True)
 
 # 项目比价分析
@@ -234,7 +235,6 @@ with tab5:
             p_old = q1.get(sid, None)
             p_new = q2.get(sid, None)
 
-            # 修正版安全判断
             if pd.notna(p_old) and pd.notna(p_new):
                 status = "↑" if p_new > p_old else "↓" if p_new < p_old else "→"
             elif pd.isna(p_old) and pd.notna(p_new):
@@ -245,7 +245,7 @@ with tab5:
                 status = "无比较"
 
             diff = (p_new - p_old) if pd.notna(p_old) and pd.notna(p_new) else None
-            pct = (diff / p_old * 100) if diff is not None and p_old != 0 else None
+            pct = (diff / p_old * 100) if diff is not None and p_old else None
             rows.append([name, p_old, p_new, diff, pct, status])
 
         df = pd.DataFrame(rows, columns=["品名", "项目A", "项目B", "涨跌额", "涨跌幅%", "状态"])
@@ -267,10 +267,10 @@ with tab5:
         trend_data = quotes[quotes["商品ID"] == prod_id_choice].merge(projects, on="项目ID")
         if not trend_data.empty:
             trend_data = trend_data.sort_values("询价日期")
-            fig, ax = plt.subplots(figsize=(8,4))
+            fig, ax = plt.subplots(figsize=(8, 4))
             ax.plot(trend_data["询价日期"], trend_data["价格"], marker='o')
             ax.set_xlabel("询价日期")
             ax.set_ylabel("价格")
             ax.set_title(f"{product_choice} 价格走势")
             plt.xticks(rotation=45)
-            st.pyplot(fig)
+            st.pyplot(fig)            
