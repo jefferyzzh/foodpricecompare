@@ -231,14 +231,19 @@ with tab5:
             name = products[products["商品ID"] == sid]["品名"].values[0]
             p_old = q1.get(sid, None)
             p_new = q2.get(sid, None)
-            if p_old is None:
+
+            # 修正版安全判断
+            if pd.notna(p_old) and pd.notna(p_new):
+                status = "↑" if p_new > p_old else "↓" if p_new < p_old else "→"
+            elif pd.isna(p_old) and pd.notna(p_new):
                 status = "新增"
-            elif p_new is None:
+            elif pd.notna(p_old) and pd.isna(p_new):
                 status = "未报价"
             else:
-                status = "↑" if p_new > p_old else "↓" if p_new < p_old else "→"
-            diff = (p_new - p_old) if p_old and p_new else None
-            pct = (diff / p_old * 100) if diff and p_old else None
+                status = "无比较"
+
+            diff = (p_new - p_old) if pd.notna(p_old) and pd.notna(p_new) else None
+            pct = (diff / p_old * 100) if diff is not None and p_old != 0 else None
             rows.append([name, p_old, p_new, diff, pct, status])
 
         df = pd.DataFrame(rows, columns=["品名", "项目A", "项目B", "涨跌额", "涨跌幅%", "状态"])
@@ -266,4 +271,4 @@ with tab5:
             ax.set_ylabel("价格")
             ax.set_title(f"{product_choice} 价格走势")
             plt.xticks(rotation=45)
-            st.pyplot(fig)            
+            st.pyplot(fig)
