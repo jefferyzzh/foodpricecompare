@@ -124,7 +124,6 @@ with tab2:
             updated_products.to_csv(os.path.join(base_dir, "products.csv"), index=False)
             st.success("已删除选中商品")
             st.rerun()
-
 # 商品类别管理
 with tab3:
     st.subheader("🏷️ 商品类别管理")
@@ -172,7 +171,8 @@ with tab3:
             updated_categories.to_csv(os.path.join(base_dir, "categories.csv"), index=False)
             st.success("已删除选中类别")
             st.rerun()
-            # 报价管理
+
+# 报价管理
 with tab4:
     st.subheader("🧾 报价管理")
     if projects.empty or products.empty:
@@ -211,7 +211,7 @@ with tab4:
             styled = q_this.style.applymap(lambda v: highlight_price(v, limit_price) if isinstance(v, (int, float)) else "", subset=["价格"])
             st.dataframe(styled, use_container_width=True)
 
-# 比价分析
+# 项目比价分析
 with tab5:
     st.subheader("📊 项目比价分析")
     if len(projects) < 2:
@@ -253,7 +253,6 @@ with tab5:
 
         st.dataframe(df.style.applymap(color_arrow, subset=["状态"]), use_container_width=True)
 
-        # 绘制价格趋势
         st.markdown("### 📈 商品价格走势")
         product_choice = st.selectbox("选择商品查看价格走势", products["品名"], key="chart_prod")
         prod_id_choice = products[products["品名"] == product_choice]["商品ID"].values[0]
@@ -267,4 +266,4 @@ with tab5:
             ax.set_ylabel("价格")
             ax.set_title(f"{product_choice} 价格走势")
             plt.xticks(rotation=45)
-            st.pyplot(fig)
+            st.pyplot(fig)            
