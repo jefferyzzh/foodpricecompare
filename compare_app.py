@@ -67,12 +67,20 @@ with tab1:
         st.rerun()
 
     if st.button("🗑 批量删除选中项目"):
-        if selected_rows and isinstance(selected_rows, list) and len(selected_rows) > 0:
-            to_delete_ids = [r["项目ID"] for r in selected_rows if isinstance(r, dict)]
-            updated_projects = updated_projects[~updated_projects["项目ID"].isin(to_delete_ids)]
-            updated_projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
-            st.success("已删除选中项目")
-            st.rerun()
+    if selected_rows is not None and len(selected_rows) > 0:
+        try:
+            to_delete_ids = [r["项目ID"] for r in selected_rows if isinstance(r, dict) and "项目ID" in r]
+            if to_delete_ids:
+                updated_projects = updated_projects[~updated_projects["项目ID"].isin(to_delete_ids)]
+                updated_projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
+                st.success("✅ 已删除选中项目")
+                st.rerun()
+            else:
+                st.warning("⚠️ 没有正确选中项目，请重新选择")
+        except Exception as e:
+            st.error(f"❌ 删除时出错：{e}")
+    else:
+        st.warning("⚠️ 请选择要删除的项目！")
 
 # 商品管理
 with tab2:
