@@ -27,6 +27,19 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs(["📁 项目管理", "📦 商品管理"
 # 项目管理
 with tab1:
     st.subheader("📁 项目管理")
+    if st.button("➕ 新增项目"):
+        with st.form("add_project_form", clear_on_submit=True):
+            pname = st.text_input("项目名称")
+            qdate = st.date_input("询价日期", value=date.today())
+            submitted = st.form_submit_button("✅ 保存项目")
+            if submitted:
+                new_id = projects["项目ID"].max() + 1 if not projects.empty else 1
+                new_row = pd.DataFrame([[new_id, pname, qdate, str(date.today())]], columns=projects.columns)
+                projects = pd.concat([projects, new_row], ignore_index=True)
+                projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
+                st.success("项目添加成功！")
+                st.rerun()
+
     gb = GridOptionsBuilder.from_dataframe(projects)
     gb.configure_selection('multiple', use_checkbox=True)
     gb.configure_pagination()
@@ -53,17 +66,12 @@ with tab1:
         st.rerun()
 
     if st.button("🗑 批量删除选中项目"):
-        if selected_rows is not None and len(selected_rows) > 0:
-            to_delete_ids = [r['项目ID'] for r in selected_rows if isinstance(r, dict)]
-            updated_projects = updated_projects[~updated_projects['项目ID'].isin(to_delete_ids)]
+        if selected_rows and isinstance(selected_rows, list) and len(selected_rows) > 0:
+            to_delete_ids = [r["项目ID"] for r in selected_rows if isinstance(r, dict)]
+            updated_projects = updated_projects[~updated_projects["项目ID"].isin(to_delete_ids)]
             updated_projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
             st.success("已删除选中项目")
             st.rerun()
-
-    if st.button("📄 导出项目CSV"):
-        updated_projects.to_csv("导出项目列表.csv", index=False)
-        with open("导出项目列表.csv", "rb") as f:
-            st.download_button("点击下载项目CSV", f, file_name="projects_export.csv")
 
 # 商品管理
 with tab2:
@@ -73,7 +81,7 @@ with tab2:
             pname = st.text_input("商品名称")
             spec = st.text_input("规格")
             unit = st.text_input("单位")
-            limit = st.number_input("限价", min_value=0.01)
+            limit = st.number_input("限价", min_value=0.01, format="%.2f")
             cat = st.selectbox("类别", categories["类别名称"])
             submitted = st.form_submit_button("✅ 保存商品")
             if submitted:
@@ -110,9 +118,9 @@ with tab2:
         st.rerun()
 
     if st.button("🗑 批量删除选中商品"):
-        if selected_rows is not None and len(selected_rows) > 0:
-            to_delete_ids = [r['商品ID'] for r in selected_rows if isinstance(r, dict)]
-            updated_products = updated_products[~updated_products['商品ID'].isin(to_delete_ids)]
+        if selected_rows and isinstance(selected_rows, list) and len(selected_rows) > 0:
+            to_delete_ids = [r["商品ID"] for r in selected_rows if isinstance(r, dict)]
+            updated_products = updated_products[~updated_products["商品ID"].isin(to_delete_ids)]
             updated_products.to_csv(os.path.join(base_dir, "products.csv"), index=False)
             st.success("已删除选中商品")
             st.rerun()
@@ -158,9 +166,9 @@ with tab3:
         st.rerun()
 
     if st.button("🗑 批量删除选中类别"):
-        if selected_rows is not None and len(selected_rows) > 0:
-            to_delete_ids = [r['类别ID'] for r in selected_rows if isinstance(r, dict)]
-            updated_categories = updated_categories[~updated_categories['类别ID'].isin(to_delete_ids)]
+        if selected_rows and isinstance(selected_rows, list) and len(selected_rows) > 0:
+            to_delete_ids = [r["类别ID"] for r in selected_rows if isinstance(r, dict)]
+            updated_categories = updated_categories[~updated_categories["类别ID"].isin(to_delete_ids)]
             updated_categories.to_csv(os.path.join(base_dir, "categories.csv"), index=False)
             st.success("已删除选中类别")
             st.rerun()
@@ -257,6 +265,6 @@ with tab5:
             ax.plot(trend_data["询价日期"], trend_data["价格"], marker='o')
             ax.set_xlabel("询价日期")
             ax.set_ylabel("价格")
-            ax.set_title(f"{product_choice} 价格走势", fontproperties="SimHei")
+            ax.set_title(f"{product_choice} 价格走势")
             plt.xticks(rotation=45)
             st.pyplot(fig)
