@@ -18,11 +18,12 @@ try:
     projects = pd.read_csv(os.path.join(base_dir, "projects.csv"))
     products = pd.read_csv(os.path.join(base_dir, "products.csv"))
     quotes = pd.read_csv(os.path.join(base_dir, "quotes.csv"))
+    categories = pd.read_csv(os.path.join(base_dir, "categories.csv"))
 except Exception as e:
     st.error(f"❌ 数据读取失败：{e}")
     st.stop()
 
-tab1, tab2, tab3, tab4 = st.tabs(["📁 项目管理", "📦 商品管理", "🧾 商品报价", "📊 比价分析"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["📁 项目管理", "📦 商品管理", "🏷️ 商品类别管理", "🧾 报价管理", "📊 比价分析"])
 # 项目管理
 with tab1:
     st.subheader("📁 项目管理")
@@ -67,6 +68,22 @@ with tab1:
 # 商品管理
 with tab2:
     st.subheader("📦 商品管理")
+    if st.button("➕ 新增商品"):
+        with st.form("add_product_form", clear_on_submit=True):
+            pname = st.text_input("商品名称")
+            spec = st.text_input("规格")
+            unit = st.text_input("单位")
+            limit = st.number_input("限价", min_value=0.01)
+            cat = st.selectbox("类别", categories["类别名称"])
+            submitted = st.form_submit_button("✅ 保存商品")
+            if submitted:
+                new_id = products["商品ID"].max() + 1 if not products.empty else 1
+                new_row = pd.DataFrame([[new_id, pname, spec, unit, limit, cat]], columns=products.columns)
+                products = pd.concat([products, new_row], ignore_index=True)
+                products.to_csv(os.path.join(base_dir, "products.csv"), index=False)
+                st.success("商品添加成功！")
+                st.rerun()
+
     gb = GridOptionsBuilder.from_dataframe(products)
     gb.configure_selection('multiple', use_checkbox=True)
     gb.configure_pagination()
@@ -100,21 +117,73 @@ with tab2:
             st.success("已删除选中商品")
             st.rerun()
 
-# 商品报价
+# 商品类别管理
 with tab3:
-    st.subheader("🧾 商品报价录入")
+    st.subheader("🏷️ 商品类别管理")
+    if st.button("➕ 新增类别"):
+        with st.form("add_category_form", clear_on_submit=True):
+            cname = st.text_input("类别名称")
+            submitted = st.form_submit_button("✅ 保存类别")
+            if submitted:
+                new_id = categories["类别ID"].max() + 1 if not categories.empty else 1
+                new_row = pd.DataFrame([[new_id, cname]], columns=categories.columns)
+                categories = pd.concat([categories, new_row], ignore_index=True)
+                categories.to_csv(os.path.join(base_dir, "categories.csv"), index=False)
+                st.success("类别添加成功！")
+                st.rerun()
+
+    gb = GridOptionsBuilder.from_dataframe(categories)
+    gb.configure_selection('multiple', use_checkbox=True)
+    gb.configure_pagination()
+    gb.configure_default_column(editable=True, groupable=True)
+    grid_options = gb.build()
+
+    grid_response = AgGrid(
+        categories,
+        gridOptions=grid_options,
+        height=400,
+        width='100%',
+        data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
+        update_mode=GridUpdateMode.MODEL_CHANGED,
+        fit_columns_on_grid_load=True,
+        reload_data=True,
+    )
+
+    updated_categories = grid_response['data']
+    selected_rows = grid_response['selected_rows']
+
+    if st.button("💾 保存类别修改"):
+        updated_categories.to_csv(os.path.join(base_dir, "categories.csv"), index=False)
+        st.success("类别保存成功")
+        st.rerun()
+
+    if st.button("🗑 批量删除选中类别"):
+        if selected_rows is not None and len(selected_rows) > 0:
+            to_delete_ids = [r['类别ID'] for r in selected_rows if isinstance(r, dict)]
+            updated_categories = updated_categories[~updated_categories['类别ID'].isin(to_delete_ids)]
+            updated_categories.to_csv(os.path.join(base_dir, "categories.csv"), index=False)
+            st.success("已删除选中类别")
+            st.rerun()
+            # 报价管理
+with tab4:
+    st.subheader("🧾 报价管理")
     if projects.empty or products.empty:
         st.info("请先录入项目和商品")
     else:
-        pid = st.selectbox("选择项目", projects["项目名称"])
+        col1, col2 = st.columns(2)
+        pid = col1.selectbox("选择项目", projects["项目名称"])
         proj_id = projects[projects["项目名称"] == pid]["项目ID"].values[0]
+        selected_cat = col2.selectbox("筛选类别", ["全部"] + list(categories["类别名称"]))
 
-        pname = st.selectbox("选择商品", products["品名"])
-        prod_id = products[products["品名"] == pname]["商品ID"].values[0]
+        filtered_products = products
+        if selected_cat != "全部":
+            filtered_products = products[products["类别"] == selected_cat]
 
-        limit_price = products[products["品名"] == pname]["限价"].values[0]
+        pname = st.selectbox("选择商品", filtered_products["品名"])
+        prod_id = filtered_products[filtered_products["品名"] == pname]["商品ID"].values[0]
+        limit_price = filtered_products[filtered_products["品名"] == pname]["限价"].values[0]
 
-        price = st.number_input("本次报价", min_value=0.01)
+        price = st.number_input("本次报价（元）", min_value=0.01, format="%.2f")
 
         if st.button("✅ 添加报价"):
             new_row = pd.DataFrame([[proj_id, prod_id, price]], columns=quotes.columns)
@@ -126,16 +195,16 @@ with tab3:
         st.markdown("### 📈 当前项目商品报价")
         q_this = quotes[quotes["项目ID"] == proj_id].merge(products, on="商品ID", how="left")
         if not q_this.empty:
-            def highlight_price(val, limit=limit_price):
+            def highlight_price(val, limit):
                 try:
                     return "color: red; font-weight: bold" if float(val) > float(limit) else ""
                 except:
                     return ""
-            styled = q_this.style.applymap(lambda v: highlight_price(v) if isinstance(v, (int, float)) else "", subset=["价格"])
+            styled = q_this.style.applymap(lambda v: highlight_price(v, limit_price) if isinstance(v, (int, float)) else "", subset=["价格"])
             st.dataframe(styled, use_container_width=True)
 
 # 比价分析
-with tab4:
+with tab5:
     st.subheader("📊 项目比价分析")
     if len(projects) < 2:
         st.info("至少需要两个项目进行比价")
@@ -165,9 +234,18 @@ with tab4:
             rows.append([name, p_old, p_new, diff, pct, status])
 
         df = pd.DataFrame(rows, columns=["品名", "项目A", "项目B", "涨跌额", "涨跌幅%", "状态"])
-        st.dataframe(df, use_container_width=True)
 
-        # 绘制价格走势
+        def color_arrow(val):
+            if val == "↑":
+                return "color:red; font-weight:bold"
+            elif val == "↓":
+                return "color:green; font-weight:bold"
+            else:
+                return "color:gray; font-weight:bold"
+
+        st.dataframe(df.style.applymap(color_arrow, subset=["状态"]), use_container_width=True)
+
+        # 绘制价格趋势
         st.markdown("### 📈 商品价格走势")
         product_choice = st.selectbox("选择商品查看价格走势", products["品名"], key="chart_prod")
         prod_id_choice = products[products["品名"] == product_choice]["商品ID"].values[0]
@@ -175,9 +253,10 @@ with tab4:
         trend_data = quotes[quotes["商品ID"] == prod_id_choice].merge(projects, on="项目ID")
         if not trend_data.empty:
             trend_data = trend_data.sort_values("询价日期")
-            fig, ax = plt.subplots()
+            fig, ax = plt.subplots(figsize=(8,4))
             ax.plot(trend_data["询价日期"], trend_data["价格"], marker='o')
             ax.set_xlabel("询价日期")
             ax.set_ylabel("价格")
-            ax.set_title(f"{product_choice} 价格走势")
+            ax.set_title(f"{product_choice} 价格走势", fontproperties="SimHei")
+            plt.xticks(rotation=45)
             st.pyplot(fig)
