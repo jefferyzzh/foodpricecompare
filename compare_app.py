@@ -28,17 +28,18 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs(["📁 项目管理", "📦 商品管理"
 with tab1:
     st.subheader("📁 项目管理")
     if st.button("➕ 新增项目"):
-        with st.form("add_project_form", clear_on_submit=True):
-            pname = st.text_input("项目名称")
-            qdate = st.date_input("询价日期", value=date.today())
-            submitted = st.form_submit_button("✅ 保存项目")
-            if submitted:
-                new_id = projects["项目ID"].max() + 1 if not projects.empty else 1
-                new_row = pd.DataFrame([[new_id, pname, qdate, str(date.today())]], columns=projects.columns)
-                projects = pd.concat([projects, new_row], ignore_index=True)
-                projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
-                st.success("项目添加成功！")
-                st.rerun()
+    with st.form("add_project_form", clear_on_submit=True):
+        pname = st.text_input("项目名称")
+        qdate = st.date_input("询价日期", value=date.today())
+        submitted = st.form_submit_button("✅ 保存项目")
+        if submitted:
+            new_id = projects["项目ID"].max() + 1 if not projects.empty else 1
+            new_row = pd.DataFrame([[new_id, pname, qdate, str(date.today())]], columns=projects.columns)
+            projects = pd.concat([projects, new_row], ignore_index=True)
+            projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
+            projects = pd.read_csv(os.path.join(base_dir, "projects.csv"))  # ✅ 关键：重新读取
+            st.success("项目添加成功！")
+            st.rerun()
 
     gb = GridOptionsBuilder.from_dataframe(projects)
     gb.configure_selection('multiple', use_checkbox=True)
@@ -77,20 +78,21 @@ with tab1:
 with tab2:
     st.subheader("📦 商品管理")
     if st.button("➕ 新增商品"):
-        with st.form("add_product_form", clear_on_submit=True):
-            pname = st.text_input("商品名称")
-            spec = st.text_input("规格")
-            unit = st.text_input("单位")
-            limit = st.number_input("限价", min_value=0.01, format="%.2f")
-            cat = st.selectbox("类别", categories["类别名称"])
-            submitted = st.form_submit_button("✅ 保存商品")
-            if submitted:
-                new_id = products["商品ID"].max() + 1 if not products.empty else 1
-                new_row = pd.DataFrame([[new_id, pname, spec, unit, limit, cat]], columns=products.columns)
-                products = pd.concat([products, new_row], ignore_index=True)
-                products.to_csv(os.path.join(base_dir, "products.csv"), index=False)
-                st.success("商品添加成功！")
-                st.rerun()
+    with st.form("add_product_form", clear_on_submit=True):
+        pname = st.text_input("商品名称")
+        spec = st.text_input("规格")
+        unit = st.text_input("单位")
+        limit = st.number_input("限价", min_value=0.01, format="%.2f")
+        cat = st.selectbox("类别", categories["类别名称"])
+        submitted = st.form_submit_button("✅ 保存商品")
+        if submitted:
+            new_id = products["商品ID"].max() + 1 if not products.empty else 1
+            new_row = pd.DataFrame([[new_id, pname, spec, unit, limit, cat]], columns=products.columns)
+            products = pd.concat([products, new_row], ignore_index=True)
+            products.to_csv(os.path.join(base_dir, "products.csv"), index=False)
+            products = pd.read_csv(os.path.join(base_dir, "products.csv"))  # ✅ 关键：重新读取
+            st.success("商品添加成功！")
+            st.rerun()
 
     gb = GridOptionsBuilder.from_dataframe(products)
     gb.configure_selection('multiple', use_checkbox=True)
