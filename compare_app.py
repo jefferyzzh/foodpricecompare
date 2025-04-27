@@ -7,13 +7,18 @@ from datetime import date
 
 st.set_page_config(page_title="原材料比价系统", layout="wide")
 st.title("🔐 原材料比价系统")
+
+# 简单密码验证
 password = st.text_input("请输入访问密码", type="password")
 if password != "abc123":
     st.warning("密码错误，或尚未输入密码")
     st.stop()
 st.success("✅ 登录成功！欢迎使用原材料比价系统")
 
+# 文件路径
 base_dir = os.path.dirname(os.path.abspath(__file__))
+
+# 读取CSV文件
 try:
     projects = pd.read_csv(os.path.join(base_dir, "projects.csv"))
     products = pd.read_csv(os.path.join(base_dir, "products.csv"))
@@ -23,61 +28,13 @@ except Exception as e:
     st.error(f"❌ 数据读取失败：{e}")
     st.stop()
 
+# 界面标签
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["📁 项目管理", "📦 商品管理", "🏷️ 商品类别管理", "🧾 报价管理", "📊 比价分析"])
 # 📁 项目管理
 with tab1:
     st.subheader("📁 项目管理")
 
     # ➕ 新增项目
-    if st.button("➕ 新增项目"):
-        with st.form("add_project_form", clear_on_submit=True):
-            pname = st.text_input("项目名称")
-            qdate = st.date_input("询价日期", value=date.today())
-            submitted = st.form_submit_button("✅ 保存项目")
-            if submitted:
-                new_id = projects["项目ID"].max() + 1 if not projects.empty else 1
-                new_row = pd.DataFrame([[new_id, pname, qdate, str(date.today())]], columns=projects.columns)
-                projects = pd.concat([projects, new_row], ignore_index=True)
-                projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
-                projects = pd.read_csv(os.path.join(base_dir, "projects.csv"))  # ✅ 新增后立刻reload
-                st.success("✅ 项目添加成功！")
-                st.rerun()
-
-    # 📋 展示项目列表
-    gb = GridOptionsBuilder.from_dataframe(projects)
-    gb.configure_selection('multiple', use_checkbox=True)
-    gb.configure_pagination()
-    gb.configure_default_column(editable=True, groupable=True)
-    grid_options = gb.build()
-
-    grid_response = AgGrid(
-    projects,
-    gridOptions=grid_options,
-    height=400,
-    width='100%',
-    data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
-    update_mode=GridUpdateMode.MODEL_CHANGED,
-    fit_columns_on_grid_load=True,
-    reload_data=True,
-    key="项目管理表格"  # ✅ 这里加了独特key
-)
-    
-
-    updated_projects = grid_response['data']
-    selected_rows = grid_response['selected_rows']
-
-    # 💾 保存修改项目
-    if st.button("💾 保存修改项目"):
-        updated_projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
-        projects = pd.read_csv(os.path.join(base_dir, "projects.csv"))  # ✅ 保存后reload
-        st.success("✅ 修改保存成功！")
-        st.rerun()
-
-    # 📁 项目管理
-with tab1:
-    st.subheader("📁 项目管理")
-
-    # 新增项目表单
     with st.expander("➕ 新增项目", expanded=False):
         with st.form("add_project_form", clear_on_submit=True):
             pname = st.text_input("项目名称")
@@ -91,7 +48,7 @@ with tab1:
                 st.success("✅ 项目添加成功！")
                 st.experimental_rerun()
 
-    # 展示项目列表
+    # 📋 展示项目列表
     gb = GridOptionsBuilder.from_dataframe(projects)
     gb.configure_selection('multiple', use_checkbox=True)
     gb.configure_pagination()
@@ -107,18 +64,19 @@ with tab1:
         update_mode=GridUpdateMode.MODEL_CHANGED,
         fit_columns_on_grid_load=True,
         reload_data=True,
+        key="项目管理表格"  # ✅ 加唯一key，防止ID冲突
     )
 
     updated_projects = grid_response['data']
     selected_rows = grid_response['selected_rows']
 
-    # 保存修改
+    # 💾 保存修改项目
     if st.button("💾 保存修改项目"):
         updated_projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
-        st.success("✅ 修改保存成功")
+        st.success("✅ 修改保存成功！")
         st.experimental_rerun()
 
-    # 批量删除
+    # 🗑 批量删除项目
     if st.button("🗑 批量删除选中项目"):
         try:
             if selected_rows and isinstance(selected_rows, list):
@@ -131,14 +89,15 @@ with tab1:
                 else:
                     st.warning("⚠️ 没有有效选中的项目")
             else:
-                st.warning("⚠️ 请先勾选要删除的项目")
+                st.warning("⚠️ 请至少选择一个项目！")
         except Exception as e:
             st.error(f"❌ 删除失败：{e}")
-
-# 商品管理
+            # 📦 商品管理
 with tab2:
     st.subheader("📦 商品管理")
-    if st.button("➕ 新增商品"):
+
+    # ➕ 新增商品
+    with st.expander("➕ 新增商品", expanded=False):
         with st.form("add_product_form", clear_on_submit=True):
             pname = st.text_input("商品名称")
             spec = st.text_input("规格")
@@ -151,10 +110,10 @@ with tab2:
                 new_row = pd.DataFrame([[new_id, pname, spec, unit, limit, cat]], columns=products.columns)
                 products = pd.concat([products, new_row], ignore_index=True)
                 products.to_csv(os.path.join(base_dir, "products.csv"), index=False)
-                products = pd.read_csv(os.path.join(base_dir, "products.csv"))
                 st.success("✅ 商品添加成功！")
-                st.rerun()
+                st.experimental_rerun()
 
+    # 📋 展示商品列表
     gb = GridOptionsBuilder.from_dataframe(products)
     gb.configure_selection('multiple', use_checkbox=True)
     gb.configure_pagination()
@@ -170,36 +129,41 @@ with tab2:
         update_mode=GridUpdateMode.MODEL_CHANGED,
         fit_columns_on_grid_load=True,
         reload_data=True,
+        key="商品管理表格"  # ✅ 加唯一key
     )
 
     updated_products = grid_response['data']
     selected_rows = grid_response['selected_rows']
 
+    # 💾 保存商品修改
     if st.button("💾 保存商品修改"):
         updated_products.to_csv(os.path.join(base_dir, "products.csv"), index=False)
-        st.success("✅ 商品保存成功")
-        st.rerun()
+        st.success("✅ 商品修改保存成功！")
+        st.experimental_rerun()
 
+    # 🗑 批量删除选中商品
     if st.button("🗑 批量删除选中商品"):
-        if selected_rows is not None and len(selected_rows) > 0:
-            try:
-                to_delete_ids = [r["商品ID"] for r in selected_rows if isinstance(r, dict) and "商品ID" in r]
-                if to_delete_ids:
-                    updated_products = updated_products[~updated_products["商品ID"].isin(to_delete_ids)]
-                    updated_products.to_csv(os.path.join(base_dir, "products.csv"), index=False)
-                    st.success("✅ 已删除选中商品")
-                    st.rerun()
+        try:
+            if selected_rows and isinstance(selected_rows, list):
+                selected_ids = [row['商品ID'] for row in selected_rows if isinstance(row, dict) and '商品ID' in row]
+                if selected_ids:
+                    products = products[~products["商品ID"].isin(selected_ids)]
+                    products.to_csv(os.path.join(base_dir, "products.csv"), index=False)
+                    st.success(f"✅ 已成功删除 {len(selected_ids)} 个商品")
+                    st.experimental_rerun()
                 else:
-                    st.warning("⚠️ 没有正确选中商品，请重新选择")
-            except Exception as e:
-                st.error(f"❌ 删除时出错：{e}")
-        else:
-            st.warning("⚠️ 请选择要删除的商品！")
+                    st.warning("⚠️ 没有有效选中的商品")
+            else:
+                st.warning("⚠️ 请至少选择一个商品！")
+        except Exception as e:
+            st.error(f"❌ 删除失败：{e}")
 
-# 商品类别管理
+# 🏷️ 商品类别管理
 with tab3:
     st.subheader("🏷️ 商品类别管理")
-    if st.button("➕ 新增类别"):
+
+    # ➕ 新增类别
+    with st.expander("➕ 新增类别", expanded=False):
         with st.form("add_category_form", clear_on_submit=True):
             cname = st.text_input("类别名称")
             submitted = st.form_submit_button("✅ 保存类别")
@@ -208,10 +172,10 @@ with tab3:
                 new_row = pd.DataFrame([[new_id, cname]], columns=categories.columns)
                 categories = pd.concat([categories, new_row], ignore_index=True)
                 categories.to_csv(os.path.join(base_dir, "categories.csv"), index=False)
-                categories = pd.read_csv(os.path.join(base_dir, "categories.csv"))
                 st.success("✅ 类别添加成功！")
-                st.rerun()
+                st.experimental_rerun()
 
+    # 📋 展示类别列表
     gb = GridOptionsBuilder.from_dataframe(categories)
     gb.configure_selection('multiple', use_checkbox=True)
     gb.configure_pagination()
@@ -227,39 +191,42 @@ with tab3:
         update_mode=GridUpdateMode.MODEL_CHANGED,
         fit_columns_on_grid_load=True,
         reload_data=True,
+        key="类别管理表格"  # ✅ 加唯一key
     )
 
     updated_categories = grid_response['data']
     selected_rows = grid_response['selected_rows']
 
+    # 💾 保存类别修改
     if st.button("💾 保存类别修改"):
         updated_categories.to_csv(os.path.join(base_dir, "categories.csv"), index=False)
-        st.success("✅ 类别保存成功")
-        st.rerun()
+        st.success("✅ 类别修改保存成功！")
+        st.experimental_rerun()
 
+    # 🗑 批量删除选中类别
     if st.button("🗑 批量删除选中类别"):
-        if selected_rows is not None and len(selected_rows) > 0:
-            try:
-                to_delete_ids = [r["类别ID"] for r in selected_rows if isinstance(r, dict) and "类别ID" in r]
-                if to_delete_ids:
-                    updated_categories = updated_categories[~updated_categories["类别ID"].isin(to_delete_ids)]
-                    updated_categories.to_csv(os.path.join(base_dir, "categories.csv"), index=False)
-                    st.success("✅ 已删除选中类别")
-                    st.rerun()
+        try:
+            if selected_rows and isinstance(selected_rows, list):
+                selected_ids = [row['类别ID'] for row in selected_rows if isinstance(row, dict) and '类别ID' in row]
+                if selected_ids:
+                    categories = categories[~categories["类别ID"].isin(selected_ids)]
+                    categories.to_csv(os.path.join(base_dir, "categories.csv"), index=False)
+                    st.success(f"✅ 已成功删除 {len(selected_ids)} 个类别")
+                    st.experimental_rerun()
                 else:
-                    st.warning("⚠️ 没有正确选中类别，请重新选择")
-            except Exception as e:
-                st.error(f"❌ 删除时出错：{e}")
-        else:
-            st.warning("⚠️ 请选择要删除的类别！")
- # 报价管理
+                    st.warning("⚠️ 没有有效选中的类别")
+            else:
+                st.warning("⚠️ 请至少选择一个类别！")
+        except Exception as e:
+            st.error(f"❌ 删除失败：{e}")
+            # 🧾 报价管理
 with tab4:
     st.subheader("🧾 报价管理")
     if projects.empty or products.empty:
         st.info("请先录入项目和商品")
     else:
         col1, col2 = st.columns(2)
-        pid = col1.selectbox("选择项目", projects["项目名称"])
+        pid = col1.selectbox("选择项目", projects["项目名称"], key="报价项目选择")
         proj_id = projects[projects["项目名称"] == pid]["项目ID"].values[0]
         selected_cat = col2.selectbox("筛选类别", ["全部"] + list(categories["类别名称"]))
 
@@ -267,7 +234,7 @@ with tab4:
         if selected_cat != "全部":
             filtered_products = products[products["类别"] == selected_cat]
 
-        pname = st.selectbox("选择商品", filtered_products["品名"])
+        pname = st.selectbox("选择商品", filtered_products["品名"], key="报价商品选择")
         prod_id = filtered_products[filtered_products["品名"] == pname]["商品ID"].values[0]
         limit_price = filtered_products[filtered_products["品名"] == pname]["限价"].values[0]
 
@@ -278,7 +245,7 @@ with tab4:
             quotes = pd.concat([quotes, new_row], ignore_index=True)
             quotes.to_csv(os.path.join(base_dir, "quotes.csv"), index=False)
             st.success("✅ 报价添加成功！")
-            st.rerun()
+            st.experimental_rerun()
 
         st.markdown("### 📈 当前项目商品报价")
         q_this = quotes[quotes["项目ID"] == proj_id].merge(products, on="商品ID", how="left")
@@ -291,15 +258,15 @@ with tab4:
             styled = q_this.style.applymap(lambda v: highlight_price(v) if isinstance(v, (int, float)) else "", subset=["价格"])
             st.dataframe(styled, use_container_width=True)
 
-# 项目比价分析
+# 📊 项目比价分析
 with tab5:
     st.subheader("📊 项目比价分析")
     if len(projects) < 2:
         st.info("至少需要两个项目进行比价")
     else:
         col1, col2 = st.columns(2)
-        p1 = col1.selectbox("项目 A", projects["项目名称"], key="p1")
-        p2 = col2.selectbox("项目 B", projects["项目名称"], key="p2")
+        p1 = col1.selectbox("项目 A", projects["项目名称"], key="项目A选择")
+        p2 = col2.selectbox("项目 B", projects["项目名称"], key="项目B选择")
         id1 = projects[projects["项目名称"] == p1]["项目ID"].values[0]
         id2 = projects[projects["项目名称"] == p2]["项目ID"].values[0]
         q1 = quotes[quotes["项目ID"] == id1].set_index("商品ID")["价格"]
@@ -312,7 +279,6 @@ with tab5:
             p_old = q1.get(sid)
             p_new = q2.get(sid)
 
-            # 超终极安全处理
             if isinstance(p_old, pd.Series):
                 p_old = p_old.values[0] if not p_old.empty else None
             if isinstance(p_new, pd.Series):
@@ -331,7 +297,7 @@ with tab5:
             pct = (diff / p_old * 100) if diff is not None and p_old else None
             rows.append([name, p_old, p_new, diff, pct, status])
 
-        df = pd.DataFrame(rows, columns=["品名", "项目A", "项目B", "涨跌额", "涨跌幅%", "状态"])
+        df = pd.DataFrame(rows, columns=["品名", "项目A价格", "项目B价格", "涨跌额", "涨跌幅%", "状态"])
 
         def color_arrow(val):
             if val == "↑":
@@ -344,7 +310,7 @@ with tab5:
         st.dataframe(df.style.applymap(color_arrow, subset=["状态"]), use_container_width=True)
 
         st.markdown("### 📈 商品价格走势")
-        product_choice = st.selectbox("选择商品查看价格走势", products["品名"], key="chart_prod")
+        product_choice = st.selectbox("选择商品查看价格走势", products["品名"], key="趋势商品选择")
         prod_id_choice = products[products["品名"] == product_choice]["商品ID"].values[0]
 
         trend_data = quotes[quotes["商品ID"] == prod_id_choice].merge(projects, on="项目ID")
