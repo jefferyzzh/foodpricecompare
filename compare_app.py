@@ -46,7 +46,7 @@ with tab1:
                 projects = pd.concat([projects, new_row], ignore_index=True)
                 projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
                 st.success("✅ 项目添加成功！")
-                st.experimental_rerun()
+                st.rerun()
 
     # 📋 展示项目列表
     gb = GridOptionsBuilder.from_dataframe(projects)
@@ -74,7 +74,7 @@ with tab1:
     if st.button("💾 保存修改项目"):
         updated_projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
         st.success("✅ 修改保存成功！")
-        st.experimental_rerun()
+        st.rerun()
 
     # 🗑 批量删除项目
 if st.button("🗑 批量删除选中项目"):
@@ -86,7 +86,7 @@ if st.button("🗑 批量删除选中项目"):
                 projects = projects[~projects["项目ID"].isin(selected_ids)]
                 projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
                 st.success(f"✅ 已成功删除 {len(selected_ids)} 个项目")
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.warning("⚠️ 没有有效选中的项目")
         else:
@@ -112,7 +112,7 @@ with tab2:
                 products = pd.concat([products, new_row], ignore_index=True)
                 products.to_csv(os.path.join(base_dir, "products.csv"), index=False)
                 st.success("✅ 商品添加成功！")
-                st.experimental_rerun()
+                st.rerun()
 
     # 📋 展示商品列表
     gb = GridOptionsBuilder.from_dataframe(products)
@@ -140,7 +140,7 @@ with tab2:
     if st.button("💾 保存商品修改"):
         updated_products.to_csv(os.path.join(base_dir, "products.csv"), index=False)
         st.success("✅ 商品修改保存成功！")
-        st.experimental_rerun()
+        st.rerun()
 
     # 🗑 批量删除选中商品
     if st.button("🗑 批量删除选中商品"):
@@ -151,7 +151,7 @@ with tab2:
                     products = products[~products["商品ID"].isin(selected_ids)]
                     products.to_csv(os.path.join(base_dir, "products.csv"), index=False)
                     st.success(f"✅ 已成功删除 {len(selected_ids)} 个商品")
-                    st.experimental_rerun()
+                    st.rerun()
                 else:
                     st.warning("⚠️ 没有有效选中的商品")
             else:
@@ -174,7 +174,7 @@ with tab3:
                 categories = pd.concat([categories, new_row], ignore_index=True)
                 categories.to_csv(os.path.join(base_dir, "categories.csv"), index=False)
                 st.success("✅ 类别添加成功！")
-                st.experimental_rerun()
+                st.rerun()
 
     # 📋 展示类别列表
     gb = GridOptionsBuilder.from_dataframe(categories)
@@ -202,7 +202,7 @@ with tab3:
     if st.button("💾 保存类别修改"):
         updated_categories.to_csv(os.path.join(base_dir, "categories.csv"), index=False)
         st.success("✅ 类别修改保存成功！")
-        st.experimental_rerun()
+        st.rerun()
 
     # 🗑 批量删除选中类别
     if st.button("🗑 批量删除选中类别"):
@@ -213,7 +213,7 @@ with tab3:
                     categories = categories[~categories["类别ID"].isin(selected_ids)]
                     categories.to_csv(os.path.join(base_dir, "categories.csv"), index=False)
                     st.success(f"✅ 已成功删除 {len(selected_ids)} 个类别")
-                    st.experimental_rerun()
+                    st.rerun()
                 else:
                     st.warning("⚠️ 没有有效选中的类别")
             else:
@@ -246,7 +246,7 @@ with tab4:
             quotes = pd.concat([quotes, new_row], ignore_index=True)
             quotes.to_csv(os.path.join(base_dir, "quotes.csv"), index=False)
             st.success("✅ 报价添加成功！")
-            st.experimental_rerun()
+            st.rerun()
 
         st.markdown("### 📈 当前项目商品报价")
         q_this = quotes[quotes["项目ID"] == proj_id].merge(products, on="商品ID", how="left")
