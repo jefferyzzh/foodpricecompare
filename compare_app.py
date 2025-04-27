@@ -37,8 +37,8 @@ with tab1:
                 new_row = pd.DataFrame([[new_id, pname, qdate, str(date.today())]], columns=projects.columns)
                 projects = pd.concat([projects, new_row], ignore_index=True)
                 projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
-                projects = pd.read_csv(os.path.join(base_dir, "projects.csv"))  # 强制刷新
-                st.success("项目添加成功！")
+                projects = pd.read_csv(os.path.join(base_dir, "projects.csv"))
+                st.success("✅ 项目添加成功！")
                 st.rerun()
 
     gb = GridOptionsBuilder.from_dataframe(projects)
@@ -63,22 +63,24 @@ with tab1:
 
     if st.button("💾 保存修改项目"):
         updated_projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
-        st.success("项目保存成功")
+        st.success("✅ 项目保存成功")
         st.rerun()
 
     if st.button("🗑 批量删除选中项目"):
-    if selected_rows is not None and not pd.DataFrame(selected_rows).empty:
-        selected_rows_list = selected_rows.to_dict(orient="records") if hasattr(selected_rows, "to_dict") else selected_rows
-        to_delete_ids = [r["项目ID"] for r in selected_rows_list if isinstance(r, dict) and "项目ID" in r]
-        if to_delete_ids:
-            updated_projects = updated_projects[~updated_projects["项目ID"].isin(to_delete_ids)]
-            updated_projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
-            st.success("✅ 已删除选中项目")
-            st.rerun()
+        if selected_rows is not None and len(selected_rows) > 0:
+            try:
+                to_delete_ids = [r["项目ID"] for r in selected_rows if isinstance(r, dict) and "项目ID" in r]
+                if to_delete_ids:
+                    updated_projects = updated_projects[~updated_projects["项目ID"].isin(to_delete_ids)]
+                    updated_projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
+                    st.success("✅ 已删除选中项目")
+                    st.rerun()
+                else:
+                    st.warning("⚠️ 没有正确选中项目，请重新选择")
+            except Exception as e:
+                st.error(f"❌ 删除时出错：{e}")
         else:
-            st.warning("⚠️ 没有正确选中项目，请重新选择")
-    else:
-        st.warning("⚠️ 请选择要删除的项目！")
+            st.warning("⚠️ 请选择要删除的项目！")
 
 # 商品管理
 with tab2:
@@ -96,8 +98,8 @@ with tab2:
                 new_row = pd.DataFrame([[new_id, pname, spec, unit, limit, cat]], columns=products.columns)
                 products = pd.concat([products, new_row], ignore_index=True)
                 products.to_csv(os.path.join(base_dir, "products.csv"), index=False)
-                products = pd.read_csv(os.path.join(base_dir, "products.csv"))  # 强制刷新
-                st.success("商品添加成功！")
+                products = pd.read_csv(os.path.join(base_dir, "products.csv"))
+                st.success("✅ 商品添加成功！")
                 st.rerun()
 
     gb = GridOptionsBuilder.from_dataframe(products)
@@ -122,16 +124,24 @@ with tab2:
 
     if st.button("💾 保存商品修改"):
         updated_products.to_csv(os.path.join(base_dir, "products.csv"), index=False)
-        st.success("商品保存成功")
+        st.success("✅ 商品保存成功")
         st.rerun()
 
     if st.button("🗑 批量删除选中商品"):
-        if selected_rows and isinstance(selected_rows, list) and len(selected_rows) > 0:
-            to_delete_ids = [r["商品ID"] for r in selected_rows if isinstance(r, dict)]
-            updated_products = updated_products[~updated_products["商品ID"].isin(to_delete_ids)]
-            updated_products.to_csv(os.path.join(base_dir, "products.csv"), index=False)
-            st.success("已删除选中商品")
-            st.rerun()
+        if selected_rows is not None and len(selected_rows) > 0:
+            try:
+                to_delete_ids = [r["商品ID"] for r in selected_rows if isinstance(r, dict) and "商品ID" in r]
+                if to_delete_ids:
+                    updated_products = updated_products[~updated_products["商品ID"].isin(to_delete_ids)]
+                    updated_products.to_csv(os.path.join(base_dir, "products.csv"), index=False)
+                    st.success("✅ 已删除选中商品")
+                    st.rerun()
+                else:
+                    st.warning("⚠️ 没有正确选中商品，请重新选择")
+            except Exception as e:
+                st.error(f"❌ 删除时出错：{e}")
+        else:
+            st.warning("⚠️ 请选择要删除的商品！")
 
 # 商品类别管理
 with tab3:
@@ -145,8 +155,8 @@ with tab3:
                 new_row = pd.DataFrame([[new_id, cname]], columns=categories.columns)
                 categories = pd.concat([categories, new_row], ignore_index=True)
                 categories.to_csv(os.path.join(base_dir, "categories.csv"), index=False)
-                categories = pd.read_csv(os.path.join(base_dir, "categories.csv"))  # 强制刷新
-                st.success("类别添加成功！")
+                categories = pd.read_csv(os.path.join(base_dir, "categories.csv"))
+                st.success("✅ 类别添加成功！")
                 st.rerun()
 
     gb = GridOptionsBuilder.from_dataframe(categories)
@@ -171,17 +181,25 @@ with tab3:
 
     if st.button("💾 保存类别修改"):
         updated_categories.to_csv(os.path.join(base_dir, "categories.csv"), index=False)
-        st.success("类别保存成功")
+        st.success("✅ 类别保存成功")
         st.rerun()
 
     if st.button("🗑 批量删除选中类别"):
-        if selected_rows and isinstance(selected_rows, list) and len(selected_rows) > 0:
-            to_delete_ids = [r["类别ID"] for r in selected_rows if isinstance(r, dict)]
-            updated_categories = updated_categories[~updated_categories["类别ID"].isin(to_delete_ids)]
-            updated_categories.to_csv(os.path.join(base_dir, "categories.csv"), index=False)
-            st.success("已删除选中类别")
-            st.rerun()
-# 报价管理
+        if selected_rows is not None and len(selected_rows) > 0:
+            try:
+                to_delete_ids = [r["类别ID"] for r in selected_rows if isinstance(r, dict) and "类别ID" in r]
+                if to_delete_ids:
+                    updated_categories = updated_categories[~updated_categories["类别ID"].isin(to_delete_ids)]
+                    updated_categories.to_csv(os.path.join(base_dir, "categories.csv"), index=False)
+                    st.success("✅ 已删除选中类别")
+                    st.rerun()
+                else:
+                    st.warning("⚠️ 没有正确选中类别，请重新选择")
+            except Exception as e:
+                st.error(f"❌ 删除时出错：{e}")
+        else:
+            st.warning("⚠️ 请选择要删除的类别！")
+ # 报价管理
 with tab4:
     st.subheader("🧾 报价管理")
     if projects.empty or products.empty:
@@ -206,7 +224,7 @@ with tab4:
             new_row = pd.DataFrame([[proj_id, prod_id, price]], columns=quotes.columns)
             quotes = pd.concat([quotes, new_row], ignore_index=True)
             quotes.to_csv(os.path.join(base_dir, "quotes.csv"), index=False)
-            st.success("报价添加成功")
+            st.success("✅ 报价添加成功！")
             st.rerun()
 
         st.markdown("### 📈 当前项目商品报价")
@@ -279,4 +297,4 @@ with tab5:
             ax.set_ylabel("价格")
             ax.set_title(f"{product_choice} 价格走势")
             plt.xticks(rotation=45)
-            st.pyplot(fig)            
+            st.pyplot(fig)           
