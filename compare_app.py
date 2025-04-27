@@ -107,6 +107,7 @@ with tab2:
             cat = st.selectbox("类别", categories["类别名称"])
             submitted = st.form_submit_button("✅ 保存商品")
             if submitted:
+                limit = round(limit, 2)  # ✅ 加这一行！保证限价保存是两位小数
                 new_id = products["商品ID"].max() + 1 if not products.empty else 1
                 new_row = pd.DataFrame([[new_id, pname, spec, unit, limit, cat]], columns=products.columns)
                 products = pd.concat([products, new_row], ignore_index=True)
@@ -243,6 +244,7 @@ with tab4:
         price = st.number_input("本次报价（元）", min_value=0.01, format="%.2f")
 
         if st.button("✅ 添加报价"):
+            price = round(price, 2)  # ✅ 加这一行！保存时保证两位小数
             new_row = pd.DataFrame([[proj_id, prod_id, price]], columns=quotes.columns)
             quotes = pd.concat([quotes, new_row], ignore_index=True)
             quotes.to_csv(os.path.join(base_dir, "quotes.csv"), index=False)
@@ -298,8 +300,18 @@ with tab5:
             diff = (p_new - p_old) if pd.notna(p_old) and pd.notna(p_new) else None
             pct = (diff / p_old * 100) if diff is not None and p_old else None
             rows.append([name, p_old, p_new, diff, pct, status])
+        
+        # 创建DataFrame
+df = pd.DataFrame(rows, columns=["品名", "项目A价格", "项目B价格", "涨跌额", "涨跌幅%", "状态"])
 
-        df = pd.DataFrame(rows, columns=["品名", "项目A价格", "项目B价格", "涨跌额", "涨跌幅%", "状态"])
+# ✅ 保留所有数字字段到小数点后两位
+df["项目A价格"] = df["项目A价格"].round(2)
+df["项目B价格"] = df["项目B价格"].round(2)
+df["涨跌额"] = df["涨跌额"].round(2)
+df["涨跌幅%"] = df["涨跌幅%"].round(2)
+
+# 渲染表格
+st.dataframe(df.style.applymap(...), use_container_width=True)
 
         def color_arrow(val):
             if val == "↑":
