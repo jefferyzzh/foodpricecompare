@@ -51,15 +51,17 @@ with tab1:
     grid_options = gb.build()
 
     grid_response = AgGrid(
-        projects,
-        gridOptions=grid_options,
-        height=400,
-        width='100%',
-        data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
-        update_mode=GridUpdateMode.MODEL_CHANGED,
-        fit_columns_on_grid_load=True,
-        reload_data=True,
-    )
+    projects,
+    gridOptions=grid_options,
+    height=400,
+    width='100%',
+    data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
+    update_mode=GridUpdateMode.MODEL_CHANGED,
+    fit_columns_on_grid_load=True,
+    reload_data=True,
+    key="项目管理表格"  # ✅ 这里加了独特key
+)
+    
 
     updated_projects = grid_response['data']
     selected_rows = grid_response['selected_rows']
