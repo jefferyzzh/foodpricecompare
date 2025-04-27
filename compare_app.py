@@ -73,19 +73,26 @@ with tab1:
 
     # 🗑 批量删除选中项目
 if st.button("🗑 批量删除选中项目"):
-    try:
-        selected_df = pd.DataFrame(selected_rows)  # 🚀 强制转成DataFrame，不管原来是啥
-        if not selected_df.empty:
-            to_delete_ids = selected_df["项目ID"].tolist()
-            updated_projects = updated_projects[~updated_projects["项目ID"].isin(to_delete_ids)]
-            updated_projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
-            projects = pd.read_csv(os.path.join(base_dir, "projects.csv"))
-            st.success("✅ 已删除选中项目")
-            st.rerun()
-        else:
-            st.warning("⚠️ 请至少选择一个项目！")
-    except Exception as e:
-        st.error(f"❌ 删除失败：{e}")
+    if selected_rows is not None and isinstance(selected_rows, list) and len(selected_rows) > 0:
+        try:
+            # 过滤掉那些不是字典的数据，确保是纯净的list of dicts
+            selected_rows_list = [row for row in selected_rows if isinstance(row, dict)]
+            if len(selected_rows_list) > 0:
+                to_delete_ids = [r["项目ID"] for r in selected_rows_list if "项目ID" in r]
+                if to_delete_ids:
+                    updated_projects = updated_projects[~updated_projects["项目ID"].isin(to_delete_ids)]
+                    updated_projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
+                    projects = pd.read_csv(os.path.join(base_dir, "projects.csv"))
+                    st.success("✅ 已成功删除选中项目")
+                    st.rerun()
+                else:
+                    st.warning("⚠️ 选中的项目中缺少'项目ID'")
+            else:
+                st.warning("⚠️ 请选择正确的项目进行删除")
+        except Exception as e:
+            st.error(f"❌ 删除失败，错误信息：{e}")
+    else:
+        st.warning("⚠️ 请至少选择一个项目！")
 
 # 商品管理
 with tab2:
