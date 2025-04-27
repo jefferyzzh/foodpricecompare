@@ -79,7 +79,7 @@ with tab1:
     # 🗑 批量删除项目
     if st.button("🗑 批量删除选中项目"):
         try:
-            if selected_rows and isinstance(selected_rows, list):
+            if selected_rows and isinstance(selected_rows, list) and len(selected_rows) > 0:
                 selected_ids = [row['项目ID'] for row in selected_rows if isinstance(row, dict) and '项目ID' in row]
                 if selected_ids:
                     projects = projects[~projects["项目ID"].isin(selected_ids)]
