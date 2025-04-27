@@ -71,28 +71,28 @@ with tab1:
         st.success("✅ 修改保存成功！")
         st.rerun()
 
-    # 🗑 批量删除选中项目
+    # 📋 项目管理模块 - 批量删除选中项目
 if st.button("🗑 批量删除选中项目"):
-    if selected_rows is not None and isinstance(selected_rows, list) and len(selected_rows) > 0:
-        try:
-            # 过滤掉那些不是字典的数据，确保是纯净的list of dicts
-            selected_rows_list = [row for row in selected_rows if isinstance(row, dict)]
-            if len(selected_rows_list) > 0:
-                to_delete_ids = [r["项目ID"] for r in selected_rows_list if "项目ID" in r]
-                if to_delete_ids:
-                    updated_projects = updated_projects[~updated_projects["项目ID"].isin(to_delete_ids)]
-                    updated_projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
-                    projects = pd.read_csv(os.path.join(base_dir, "projects.csv"))
-                    st.success("✅ 已成功删除选中项目")
-                    st.rerun()
-                else:
-                    st.warning("⚠️ 选中的项目中缺少'项目ID'")
+    try:
+        # 先提取出真正干净的list
+        selected_rows_list = grid_response.get('selected_rows', [])
+        
+        # 确保是列表，并且不为空
+        if isinstance(selected_rows_list, list) and len(selected_rows_list) > 0:
+            to_delete_ids = [row["项目ID"] for row in selected_rows_list if isinstance(row, dict) and "项目ID" in row]
+            
+            if to_delete_ids:
+                updated_projects = updated_projects[~updated_projects["项目ID"].isin(to_delete_ids)]
+                updated_projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
+                projects = pd.read_csv(os.path.join(base_dir, "projects.csv"))
+                st.success("✅ 已成功删除选中项目！")
+                st.rerun()
             else:
-                st.warning("⚠️ 请选择正确的项目进行删除")
-        except Exception as e:
-            st.error(f"❌ 删除失败，错误信息：{e}")
-    else:
-        st.warning("⚠️ 请至少选择一个项目！")
+                st.warning("⚠️ 没找到有效的项目ID，请重新选择")
+        else:
+            st.warning("⚠️ 请至少选择一个项目")
+    except Exception as e:
+        st.error(f"❌ 删除失败，错误信息：{e}")
 
 # 商品管理
 with tab2:
