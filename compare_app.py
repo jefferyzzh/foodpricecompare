@@ -73,9 +73,11 @@ with tab1:
 
     # 🗑 批量删除选中项目
 if st.button("🗑 批量删除选中项目"):
-    if selected_rows is not None and isinstance(selected_rows, list) and len(selected_rows) > 0:
+    if selected_rows is not None and not pd.DataFrame(selected_rows).empty:
         try:
-            to_delete_ids = [r["项目ID"] for r in selected_rows if isinstance(r, dict) and "项目ID" in r]
+            # 确保 selected_rows 是 list of dicts
+            selected_rows_list = selected_rows if isinstance(selected_rows, list) else selected_rows.to_dict(orient="records")
+            to_delete_ids = [r["项目ID"] for r in selected_rows_list if isinstance(r, dict) and "项目ID" in r]
             if to_delete_ids:
                 updated_projects = updated_projects[~updated_projects["项目ID"].isin(to_delete_ids)]
                 updated_projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
