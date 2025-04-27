@@ -256,9 +256,16 @@ with tab5:
         rows = []
         for sid in all_ids:
             name = products[products["商品ID"] == sid]["品名"].values[0]
-            p_old = q1.get(sid, None)
-            p_new = q2.get(sid, None)
+            p_old = q1.get(sid)
+            p_new = q2.get(sid)
 
+            # 防止 Series 错误，强制取第一个值
+            if isinstance(p_old, pd.Series):
+                p_old = p_old.values[0]
+            if isinstance(p_new, pd.Series):
+                p_new = p_new.values[0]
+
+            # 开始判断
             if pd.notna(p_old) and pd.notna(p_new):
                 status = "↑" if p_new > p_old else "↓" if p_new < p_old else "→"
             elif pd.isna(p_old) and pd.notna(p_new):
@@ -297,4 +304,4 @@ with tab5:
             ax.set_ylabel("价格")
             ax.set_title(f"{product_choice} 价格走势")
             plt.xticks(rotation=45)
-            st.pyplot(fig)           
+            st.pyplot(fig)
