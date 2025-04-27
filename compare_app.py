@@ -29,7 +29,7 @@ except Exception as e:
     st.stop()
 
 # 界面标签
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["📁 项目管理", "📦 商品管理", "🏷️ 商品类别管理", "🧾 报价管理", "📊 比价分析"])
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["📁 项目管理", "📦 商品管理", "🏷️ 商品类别管理", "🧾 报价管理", "📊 比价分析", "📦 数据导出与备份"])
 # 📁 项目管理
 with tab1:
     st.subheader("📁 项目管理")
@@ -329,3 +329,23 @@ with tab5:
             ax.set_title(f"{product_choice} 价格走势")
             plt.xticks(rotation=45)
             st.pyplot(fig)
+
+# 📦 数据导出与备份
+with tab6:
+    st.subheader("📦 数据导出与备份")
+
+    if st.button("📥 一键打包下载所有数据文件"):
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w") as zip_file:
+            zip_file.write(os.path.join(base_dir, "products.csv"), arcname="products.csv")
+            zip_file.write(os.path.join(base_dir, "projects.csv"), arcname="projects.csv")
+            zip_file.write(os.path.join(base_dir, "quotes.csv"), arcname="quotes.csv")
+        buffer.seek(0)
+        st.download_button(
+            label="📥 点击下载数据备份.zip",
+            data=buffer,
+            file_name="data_backup.zip",
+            mime="application/zip"
+        )
+    else:
+        st.info("点击上方按钮生成并下载所有CSV文件的备份。")
