@@ -24,9 +24,11 @@ except Exception as e:
     st.stop()
 
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["📁 项目管理", "📦 商品管理", "🏷️ 商品类别管理", "🧾 报价管理", "📊 比价分析"])
-# 项目管理
+# 📁 项目管理
 with tab1:
     st.subheader("📁 项目管理")
+
+    # ➕ 新增项目
     if st.button("➕ 新增项目"):
         with st.form("add_project_form", clear_on_submit=True):
             pname = st.text_input("项目名称")
@@ -37,10 +39,11 @@ with tab1:
                 new_row = pd.DataFrame([[new_id, pname, qdate, str(date.today())]], columns=projects.columns)
                 projects = pd.concat([projects, new_row], ignore_index=True)
                 projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
-                projects = pd.read_csv(os.path.join(base_dir, "projects.csv"))
+                projects = pd.read_csv(os.path.join(base_dir, "projects.csv"))  # ✅ 新增后立刻reload
                 st.success("✅ 项目添加成功！")
                 st.rerun()
 
+    # 📋 展示项目列表
     gb = GridOptionsBuilder.from_dataframe(projects)
     gb.configure_selection('multiple', use_checkbox=True)
     gb.configure_pagination()
@@ -61,26 +64,30 @@ with tab1:
     updated_projects = grid_response['data']
     selected_rows = grid_response['selected_rows']
 
+    # 💾 保存修改项目
     if st.button("💾 保存修改项目"):
         updated_projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
-        st.success("✅ 项目保存成功")
+        projects = pd.read_csv(os.path.join(base_dir, "projects.csv"))  # ✅ 保存后reload
+        st.success("✅ 修改保存成功！")
         st.rerun()
 
+    # 🗑 批量删除选中项目
     if st.button("🗑 批量删除选中项目"):
-        if selected_rows is not None and len(selected_rows) > 0:
+        if selected_rows and len(selected_rows) > 0:
             try:
                 to_delete_ids = [r["项目ID"] for r in selected_rows if isinstance(r, dict) and "项目ID" in r]
                 if to_delete_ids:
                     updated_projects = updated_projects[~updated_projects["项目ID"].isin(to_delete_ids)]
                     updated_projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
-                    st.success("✅ 已删除选中项目")
+                    projects = pd.read_csv(os.path.join(base_dir, "projects.csv"))  # ✅ 删除后reload
+                    st.success("✅ 已删除选中项目！")
                     st.rerun()
                 else:
                     st.warning("⚠️ 没有正确选中项目，请重新选择")
             except Exception as e:
-                st.error(f"❌ 删除时出错：{e}")
+                st.error(f"❌ 删除失败：{e}")
         else:
-            st.warning("⚠️ 请选择要删除的项目！")
+            st.warning("⚠️ 请先选择要删除的项目！")
 
 # 商品管理
 with tab2:
