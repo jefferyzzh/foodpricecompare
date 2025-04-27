@@ -301,17 +301,9 @@ with tab5:
             pct = (diff / p_old * 100) if diff is not None and p_old else None
             rows.append([name, p_old, p_new, diff, pct, status])
         
-        # 创建DataFrame
-df = pd.DataFrame(rows, columns=["品名", "项目A价格", "项目B价格", "涨跌额", "涨跌幅%", "状态"])
-
-# ✅ 保留所有数字字段到小数点后两位
-df["项目A价格"] = df["项目A价格"].round(2)
-df["项目B价格"] = df["项目B价格"].round(2)
-df["涨跌额"] = df["涨跌额"].round(2)
-df["涨跌幅%"] = df["涨跌幅%"].round(2)
-
-# 渲染表格
-st.dataframe(df.style.applymap(...), use_container_width=True)
+        # 创建完DataFrame
+        df = pd.DataFrame(rows, columns=["品名", "项目A价格", "项目B价格", "涨跌额", "涨跌幅%", "状态"])
+        
 
         def color_arrow(val):
             if val == "↑":
