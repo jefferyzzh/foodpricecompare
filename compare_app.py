@@ -259,13 +259,12 @@ with tab5:
             p_old = q1.get(sid)
             p_new = q2.get(sid)
 
-            # 防止 Series 错误，强制取第一个值
+            # 超终极安全处理
             if isinstance(p_old, pd.Series):
-                p_old = p_old.values[0]
+                p_old = p_old.values[0] if not p_old.empty else None
             if isinstance(p_new, pd.Series):
-                p_new = p_new.values[0]
+                p_new = p_new.values[0] if not p_new.empty else None
 
-            # 开始判断
             if pd.notna(p_old) and pd.notna(p_new):
                 status = "↑" if p_new > p_old else "↓" if p_new < p_old else "→"
             elif pd.isna(p_old) and pd.notna(p_new):
