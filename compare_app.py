@@ -352,32 +352,9 @@ with tab6:
     else:
         st.info("点击上方按钮生成并下载所有CSV文件的备份。")
 
-        with tab6:
-    st.subheader("📦 数据导出与备份")
-    
-    if st.button("📥 一键打包下载所有数据文件"):
-        buffer = io.BytesIO()
-        with zipfile.ZipFile(buffer, "w") as zip_file:
-            zip_file.write(os.path.join(base_dir, "products.csv"), arcname="products.csv")
-            zip_file.write(os.path.join(base_dir, "projects.csv"), arcname="projects.csv")
-            zip_file.write(os.path.join(base_dir, "quotes.csv"), arcname="quotes.csv")
-        buffer.seek(0)
-        st.download_button(
-            label="📥 点击下载数据备份.zip",
-            data=buffer,
-            file_name="data_backup.zip",
-            mime="application/zip"
-        )
-    else:
-        st.info('点击上方按钮生成并下载所有CSV文件的备份。')
+    st.divider()  # 分割线
 
-    # 这里是【结束了导出模块】！！！
-    # ✨✨✨✨✨✨✨✨✨✨✨✨✨✨
-    # 然后加下面这段，就是恢复模块
-    # ✨✨✨✨✨✨✨✨✨✨✨✨✨✨
-
-    st.divider()  # 分隔线
-
+    # 📤 数据恢复
     st.subheader("📤 数据恢复")
 
     uploaded_file = st.file_uploader("📤 上传数据备份zip文件（products、projects、quotes）", type="zip")
@@ -385,7 +362,7 @@ with tab6:
     if uploaded_file is not None:
         try:
             with zipfile.ZipFile(uploaded_file, 'r') as zip_ref:
-                zip_ref.extractall(base_dir)   # 解压到正确目录
+                zip_ref.extractall(base_dir)
             st.success("✅ 恢复成功！请点击页面右上角 [重新运行] 或手动刷新浏览器查看最新数据。")
         except Exception as e:
             st.error(f"❌ 恢复失败：{e}")
