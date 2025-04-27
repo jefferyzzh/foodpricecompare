@@ -143,21 +143,22 @@ with tab2:
         st.rerun()
 
     # 🗑 批量删除选中商品
-    if st.button("🗑 批量删除选中商品"):
-        try:
-            if selected_rows and isinstance(selected_rows, list):
-                selected_ids = [row['商品ID'] for row in selected_rows if isinstance(row, dict) and '商品ID' in row]
-                if selected_ids:
-                    products = products[~products["商品ID"].isin(selected_ids)]
-                    products.to_csv(os.path.join(base_dir, "products.csv"), index=False)
-                    st.success(f"✅ 已成功删除 {len(selected_ids)} 个商品")
-                    st.rerun()
-                else:
-                    st.warning("⚠️ 没有有效选中的商品")
+if st.button("🗑 批量删除选中商品"):
+    try:
+        selected_rows_list = selected_rows.to_dict('records') if hasattr(selected_rows, 'to_dict') else selected_rows
+        if selected_rows_list and isinstance(selected_rows_list, list) and len(selected_rows_list) > 0:
+            selected_ids = [row['商品ID'] for row in selected_rows_list if isinstance(row, dict) and '商品ID' in row]
+            if selected_ids:
+                products = products[~products["商品ID"].isin(selected_ids)]
+                products.to_csv(os.path.join(base_dir, "products.csv"), index=False)
+                st.success(f"✅ 已成功删除 {len(selected_ids)} 个商品")
+                st.rerun()
             else:
-                st.warning("⚠️ 请至少选择一个商品！")
-        except Exception as e:
-            st.error(f"❌ 删除失败：{e}")
+                st.warning("⚠️ 没有有效选中的商品")
+        else:
+            st.warning("⚠️ 请至少选择一个商品！")
+    except Exception as e:
+        st.error(f"❌ 删除失败：{e}")
 
 # 🏷️ 商品类别管理
 with tab3:
