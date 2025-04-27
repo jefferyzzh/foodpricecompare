@@ -71,28 +71,67 @@ with tab1:
         st.success("✅ 修改保存成功！")
         st.rerun()
 
-    # 📋 项目管理模块 - 批量删除选中项目
-if st.button("🗑 批量删除选中项目"):
-    try:
-        # 先提取出真正干净的list
-        selected_rows_list = grid_response.get('selected_rows', [])
-        
-        # 确保是列表，并且不为空
-        if isinstance(selected_rows_list, list) and len(selected_rows_list) > 0:
-            to_delete_ids = [row["项目ID"] for row in selected_rows_list if isinstance(row, dict) and "项目ID" in row]
-            
-            if to_delete_ids:
-                updated_projects = updated_projects[~updated_projects["项目ID"].isin(to_delete_ids)]
-                updated_projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
-                projects = pd.read_csv(os.path.join(base_dir, "projects.csv"))
-                st.success("✅ 已成功删除选中项目！")
-                st.rerun()
+    # 📁 项目管理
+with tab1:
+    st.subheader("📁 项目管理")
+
+    # 新增项目表单
+    with st.expander("➕ 新增项目", expanded=False):
+        with st.form("add_project_form", clear_on_submit=True):
+            pname = st.text_input("项目名称")
+            qdate = st.date_input("询价日期", value=date.today())
+            submitted = st.form_submit_button("✅ 保存项目")
+            if submitted:
+                new_id = projects["项目ID"].max() + 1 if not projects.empty else 1
+                new_row = pd.DataFrame([[new_id, pname, qdate, date.today()]], columns=projects.columns)
+                projects = pd.concat([projects, new_row], ignore_index=True)
+                projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
+                st.success("✅ 项目添加成功！")
+                st.experimental_rerun()
+
+    # 展示项目列表
+    gb = GridOptionsBuilder.from_dataframe(projects)
+    gb.configure_selection('multiple', use_checkbox=True)
+    gb.configure_pagination()
+    gb.configure_default_column(editable=True, groupable=True)
+    grid_options = gb.build()
+
+    grid_response = AgGrid(
+        projects,
+        gridOptions=grid_options,
+        height=400,
+        width='100%',
+        data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
+        update_mode=GridUpdateMode.MODEL_CHANGED,
+        fit_columns_on_grid_load=True,
+        reload_data=True,
+    )
+
+    updated_projects = grid_response['data']
+    selected_rows = grid_response['selected_rows']
+
+    # 保存修改
+    if st.button("💾 保存修改项目"):
+        updated_projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
+        st.success("✅ 修改保存成功")
+        st.experimental_rerun()
+
+    # 批量删除
+    if st.button("🗑 批量删除选中项目"):
+        try:
+            if selected_rows and isinstance(selected_rows, list):
+                selected_ids = [row['项目ID'] for row in selected_rows if isinstance(row, dict) and '项目ID' in row]
+                if selected_ids:
+                    projects = projects[~projects["项目ID"].isin(selected_ids)]
+                    projects.to_csv(os.path.join(base_dir, "projects.csv"), index=False)
+                    st.success(f"✅ 已成功删除 {len(selected_ids)} 个项目")
+                    st.experimental_rerun()
+                else:
+                    st.warning("⚠️ 没有有效选中的项目")
             else:
-                st.warning("⚠️ 没找到有效的项目ID，请重新选择")
-        else:
-            st.warning("⚠️ 请至少选择一个项目")
-    except Exception as e:
-        st.error(f"❌ 删除失败，错误信息：{e}")
+                st.warning("⚠️ 请先勾选要删除的项目")
+        except Exception as e:
+            st.error(f"❌ 删除失败：{e}")
 
 # 商品管理
 with tab2:
